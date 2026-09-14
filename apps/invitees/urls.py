@@ -1,7 +1,9 @@
 from django.urls import path
+from .views import InviteeImportView, InviteeListView
 
 app_name = 'invitees'
 
 urlpatterns = [
-    # Invitee endpoints will be implemented in Phase 4
+    path('import/', InviteeImportView.as_view(), name='import'),
+    path('', InviteeListView.as_view(), name='list'),
 ]

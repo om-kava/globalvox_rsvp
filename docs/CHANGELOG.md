@@ -8,6 +8,31 @@ All notable changes, phase completions, and design decisions are documented in t
 
 ---
 
+## [Phase 4] — Invitee Import & CSV Engine
+**Timestamp**: 2026-09-14 11:46:00 UTC
+
+### Added
+- Implemented `InviteeCSVImporter` service (`apps/invitees/services/csv_importer.py`):
+  - Streamed CSV parsing with `csv.reader`.
+  - Strict line-by-line validation for name (length and non-empty), phone (E.164 and international format normalization), email (RFC validation via `EmailValidator`), and in-batch duplicate phone detection.
+  - Preview Mode (`preview_only=True`): parses and validates file returning totals, valid counts, error lists with line numbers, and sample data without modifying MySQL.
+  - Commit Mode (`preview_only=False`): executes atomic bulk persistence (`bulk_create`) in batches of 1,000 rows.
+  - Formula injection (DDE) sanitization neutralizing cells starting with `=`, `+`, `-`, `@`.
+- Created `InviteeImportView` (`POST /api/invitees/import/`) with multipart parser and file size validation (max 10MB).
+- Created `InviteeListView` (`GET /api/invitees/`) supporting search filtering across name, phone, email, external ID, with pagination and privacy phone masking (`phone_masked`).
+- Added sample files: `sample_data/valid_invitees.csv` (PDF specification data) and `sample_data/invalid_invitees.csv` (deliberate errors and injection payload).
+- Implemented and executed automated test suite `apps/invitees/tests/test_import.py` (10/10 tests passed).
+
+### Security
+- 10MB file size ceiling prevents memory exhaustion DoS.
+- CSV formula injection protection prepends single quotes to dangerous leading characters.
+- Phone numbers masked via `phone_masked` property on list responses.
+
+### Tests Performed
+- `python manage.py test apps.invitees`: 10/10 passed (Preview mode, bulk insert, search filtering, duplicate detection, bad headers, empty file, non-csv rejection, formula sanitization).
+
+---
+
 ## [Phase 3] — Authentication & Authorization (JWT + Session)
 **Timestamp**: 2026-09-14 11:38:00 UTC
 
