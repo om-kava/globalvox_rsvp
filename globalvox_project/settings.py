@@ -15,7 +15,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-gv-rsvp-dev-key-!9x#p2$q@8
 
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
 
-allowed_hosts_str = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver,.vercel.app')
+allowed_hosts_str = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver,.vercel.app,.railway.app,*')
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
 if 'testserver' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('testserver')
@@ -78,11 +78,11 @@ WSGI_APPLICATION = 'globalvox_project.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 db_engine = os.getenv('DB_ENGINE', 'django.db.backends.mysql')
-db_name = os.getenv('DB_NAME', 'globalvox_rsvp')
-db_user = os.getenv('DB_USER', 'root')
-db_password = os.getenv('DB_PASSWORD', '')
-db_host = os.getenv('DB_HOST', '127.0.0.1')
-db_port = os.getenv('DB_PORT', '3306')
+db_name = os.getenv('DB_NAME') or os.getenv('MYSQLDATABASE', 'globalvox_rsvp')
+db_user = os.getenv('DB_USER') or os.getenv('MYSQLUSER', 'root')
+db_password = os.getenv('DB_PASSWORD') or os.getenv('MYSQLPASSWORD', '')
+db_host = os.getenv('DB_HOST') or os.getenv('MYSQLHOST', '127.0.0.1')
+db_port = os.getenv('DB_PORT') or os.getenv('MYSQLPORT', '3306')
 
 DATABASES = {
     'default': {
@@ -164,6 +164,15 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8000',
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF Trusted Origins for live deployment domains
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.railway.app',
+    'https://*.vercel.app',
+    'https://*.up.railway.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
 # Calling Simulation Settings
 MOCK_CALL_DELAY_MS = int(os.getenv('MOCK_CALL_DELAY_MS', '20'))
