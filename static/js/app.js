@@ -437,28 +437,74 @@
         elements.detailEmail.textContent = inv.email;
         elements.detailStatus.innerHTML = `<span class="badge badge-${inv.rsvp_status.toLowerCase()}">${inv.rsvp_status}</span> <span class="badge badge-${inv.call_status.toLowerCase()}">${inv.call_status}</span>`;
 
-        elements.detailTimeline.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">Loading call history...</div>';
+        elements.detailTimeline.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem 0;">Loading complete call history audit trail...</div>';
         openModal(elements.modalInviteeDetail);
 
         try {
-            // Note: will query attempts directly from CallAttempt or participation notes
+            const res = await Auth.authFetch(`/api/campaigns/${inv.campaign_id}/invitees/${inv.invitee_id}/`);
+            if (!res.ok) throw new Error('Failed to load call history details');
+            const data = await res.json();
+
+            // Refresh metadata
+            elements.detailName.textContent = data.invitee.name;
+            elements.detailPhone.textContent = data.invitee.phone_masked;
+            elements.detailEmail.textContent = data.invitee.email;
+            elements.detailStatus.innerHTML = `
+                <span class="badge badge-${data.rsvp_status.toLowerCase()}">${data.rsvp_status}</span>
+                <span class="badge badge-${data.call_status.toLowerCase()}">${data.call_status}</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;">(${data.attempt_count} attempts)</span>
+            `;
+
             elements.detailTimeline.innerHTML = '';
-            const item = document.createElement('div');
-            item.className = 'timeline-item';
+            const attempts = data.attempts || [];
 
-            const time = document.createElement('div');
-            time.className = 'timeline-time';
-            time.textContent = inv.last_attempt_at ? new Date(inv.last_attempt_at).toLocaleString() : 'Recent';
+            if (attempts.length === 0) {
+                elements.detailTimeline.innerHTML = `
+                    <div style="color: var(--text-muted); font-size: 0.85rem; padding: 0.75rem 0;">
+                        No calls attempted yet for this contact in <strong>${data.campaign.name}</strong>.
+                        Click <em>"Start Campaign"</em> to initiate the automated voice calling process.
+                    </div>
+                `;
+                return;
+            }
 
-            const desc = document.createElement('div');
-            desc.className = 'timeline-desc';
-            desc.textContent = inv.notes || 'No call notes recorded.';
+            attempts.forEach(att => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
 
-            item.appendChild(time);
-            item.appendChild(desc);
-            elements.detailTimeline.appendChild(item);
+                const time = document.createElement('div');
+                time.className = 'timeline-time';
+                const dateStr = att.started_at ? new Date(att.started_at).toLocaleString() : 'Just now';
+                time.innerHTML = `<strong>Attempt #${att.attempt_number}</strong> &bull; ${dateStr} &bull; Duration: <strong>${att.duration_seconds}s</strong>`;
+
+                const headerPills = document.createElement('div');
+                headerPills.style.margin = '0.35rem 0';
+                headerPills.innerHTML = `
+                    <span class="badge badge-${att.status.toLowerCase()}">${att.status}</span>
+                    <span class="badge badge-${(att.rsvp_outcome || 'pending').toLowerCase()}">Outcome: ${att.rsvp_outcome}</span>
+                    <span style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted); margin-left: 0.5rem;">ID: ${att.provider_call_id}</span>
+                `;
+
+                const desc = document.createElement('div');
+                desc.className = 'timeline-desc';
+                desc.textContent = att.transcript_summary || 'No transcript summary recorded.';
+
+                if (att.error_code) {
+                    const errBox = document.createElement('div');
+                    errBox.style.marginTop = '0.35rem';
+                    errBox.style.color = '#f87171';
+                    errBox.style.fontSize = '0.75rem';
+                    errBox.textContent = `Carrier Error [${att.error_code}]: ${att.error_message}`;
+                    desc.appendChild(errBox);
+                }
+
+                item.appendChild(time);
+                item.appendChild(headerPills);
+                item.appendChild(desc);
+                elements.detailTimeline.appendChild(item);
+            });
         } catch (e) {
-            elements.detailTimeline.innerHTML = '<div style="color: var(--status-failed);">Failed to load timeline.</div>';
+            elements.detailTimeline.innerHTML = `<div style="color: var(--status-failed); padding: 0.75rem 0;">Error loading call attempts: ${e.message}</div>`;
         }
     }
 

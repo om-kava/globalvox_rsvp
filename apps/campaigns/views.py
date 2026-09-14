@@ -119,3 +119,30 @@ class CampaignStartView(APIView):
                 }
             }, status=status.HTTP_404_NOT_FOUND)
 
+from apps.campaigns.serializers import CampaignInviteeDetailSerializer
+
+class CampaignInviteeDetailView(APIView):
+    """
+    Retrieve full details for an individual invitee within a campaign,
+    including masked PII, current RSVP & call status, and complete CallAttempt timeline.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, campaign_id: int, invitee_id: int):
+        try:
+            ci = CampaignInvitee.objects.select_related('campaign', 'invitee').prefetch_related('call_attempts').get(
+                campaign_id=campaign_id,
+                invitee_id=invitee_id
+            )
+        except CampaignInvitee.DoesNotExist:
+            return Response({
+                'error': {
+                    'code': 'NOT_FOUND',
+                    'message': f"Invitee with ID {invitee_id} is not enrolled in Campaign {campaign_id}."
+                }
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = CampaignInviteeDetailSerializer(ci)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+

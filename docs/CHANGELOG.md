@@ -8,6 +8,26 @@ All notable changes, phase completions, and design decisions are documented in t
 
 ---
 
+## [Phase 9] — Individual Invitee View & Audit Timeline
+**Timestamp**: 2026-09-14 12:22:00 UTC
+
+### Added
+- Created `apps.campaigns.serializers.CallAttemptSerializer`: serializes individual call attempts (attempt number, provider call ID, status, outcome, duration in seconds, carrier error code, error message, transcript summary, and timestamps).
+- Created `apps.campaigns.serializers.CampaignInviteeDetailSerializer`: comprehensive response containing invitee profile (with phone masking `phone_masked`), campaign metadata, RSVP and call status, attempt count, and ordered call attempts.
+- Created `CampaignInviteeDetailView` (`GET /api/campaigns/<campaign_id>/invitees/<invitee_id>/`).
+- Enhanced `static/js/app.js`: wired the "View Details" table action to fetch and render the chronological call attempt audit timeline inside the detail modal.
+- Implemented and executed automated test suite `apps/campaigns/tests/test_invitee_detail.py` (4/4 tests passed).
+
+### Security
+- Verification that invitee belongs strictly to the requested campaign prevents cross-tenant data leaks.
+- Privacy phone masking (`phone_masked`) maintained in the response payload.
+- Endpoint guarded with `IsAuthenticated`.
+
+### Tests Performed
+- `python manage.py test apps.campaigns`: 18/18 tests passed (Individual detail view with multiple call attempts, phone masking verification, 404 unenrolled invitee check, 404 missing campaign check, 401 unauthenticated check).
+
+---
+
 ## [Phase 8] — Results & Dashboard UI
 **Timestamp**: 2026-09-14 12:17:00 UTC
 

@@ -1,5 +1,11 @@
 from django.urls import path
-from .views import CampaignListCreateView, CampaignDetailView, CampaignInviteeListView, CampaignStartView
+from .views import (
+    CampaignListCreateView,
+    CampaignDetailView,
+    CampaignInviteeListView,
+    CampaignStartView,
+    CampaignInviteeDetailView
+)
 
 app_name = 'campaigns'
 
@@ -8,4 +14,5 @@ urlpatterns = [
     path('<int:pk>/', CampaignDetailView.as_view(), name='detail'),
     path('<int:pk>/start/', CampaignStartView.as_view(), name='start'),
     path('<int:campaign_id>/invitees/', CampaignInviteeListView.as_view(), name='invitees'),
+    path('<int:campaign_id>/invitees/<int:invitee_id>/', CampaignInviteeDetailView.as_view(), name='invitee_detail'),
 ]

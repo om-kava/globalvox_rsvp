@@ -128,3 +128,58 @@ class CampaignInviteeSerializer(serializers.ModelSerializer):
             'notes', 'updated_at'
         ]
         read_only_fields = fields
+
+from apps.calling.models import CallAttempt
+
+class CallAttemptSerializer(serializers.ModelSerializer):
+    """
+    Serializer for individual call attempt audit records.
+    """
+    class Meta:
+        model = CallAttempt
+        fields = [
+            'id', 'attempt_number', 'provider_call_id', 'status',
+            'rsvp_outcome', 'duration_seconds', 'error_code',
+            'error_message', 'transcript_summary', 'started_at', 'ended_at'
+        ]
+        read_only_fields = fields
+
+class CampaignInviteeDetailSerializer(serializers.ModelSerializer):
+    """
+    Comprehensive serializer for an individual invitee in a campaign,
+    including masked PII, campaign context, and chronological call attempt timeline.
+    """
+    campaign = serializers.SerializerMethodField()
+    invitee = serializers.SerializerMethodField()
+    attempts = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CampaignInvitee
+        fields = [
+            'id', 'campaign', 'invitee', 'rsvp_status', 'call_status',
+            'attempt_count', 'last_attempt_at', 'notes', 'attempts', 'updated_at'
+        ]
+        read_only_fields = fields
+
+    def get_campaign(self, obj) -> dict:
+        return {
+            'id': obj.campaign.id,
+            'name': obj.campaign.name,
+            'event_name': obj.campaign.event_name,
+            'event_date': str(obj.campaign.event_date),
+            'event_location': obj.campaign.event_location
+        }
+
+    def get_invitee(self, obj) -> dict:
+        return {
+            'id': obj.invitee.id,
+            'external_id': obj.invitee.external_id,
+            'name': obj.invitee.name,
+            'phone_masked': obj.invitee.phone_masked,
+            'email': obj.invitee.email
+        }
+
+    def get_attempts(self, obj) -> list:
+        attempts = obj.call_attempts.all().order_by('-started_at')
+        return CallAttemptSerializer(attempts, many=True).data
+
