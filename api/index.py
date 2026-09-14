@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import traceback
 
 # Ensure root project directory is in python search path
@@ -10,17 +11,15 @@ if parent_dir not in sys.path:
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'globalvox_project.settings')
 
-# Automatic cold-start migration and account seeding on serverless deployment
-startup_error = None
+# Instantaneous cold-start seeding: copy pre-migrated seed database to /tmp/db.sqlite3
 try:
-    import django
-    django.setup()
-    from django.core.management import call_command
-    call_command('migrate', interactive=False)
-    call_command('create_default_manager')
+    tmp_db = '/tmp/db.sqlite3'
+    if not os.path.exists(tmp_db) or os.path.getsize(tmp_db) == 0:
+        seed_db = os.path.join(parent_dir, 'seed.sqlite3')
+        if os.path.exists(seed_db):
+            shutil.copyfile(seed_db, tmp_db)
 except Exception as e:
-    startup_error = traceback.format_exc()
-    print(f"GlobalVox Startup Notice:\n{startup_error}")
+    print(f"GlobalVox SQLite Seed Notice: {e}")
 
 from django.core.wsgi import get_wsgi_application
 _django_app = get_wsgi_application()
@@ -34,10 +33,7 @@ def application(environ, start_response):
         status = '500 Internal Server Error'
         headers = [('Content-Type', 'text/plain; charset=utf-8')]
         start_response(status, headers)
-        err_msg = f"GlobalVox Serverless Runtime Error:\n\n{tb}"
-        if startup_error:
-            err_msg += f"\n\nCold-start Diagnostic Log:\n{startup_error}"
-        return [err_msg.encode('utf-8')]
+        return [f"GlobalVox Serverless Runtime Error:\n\n{tb}".encode('utf-8')]
 
 # Export both 'application' and 'app' to satisfy any Vercel Python runner variation
 app = application
