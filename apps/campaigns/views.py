@@ -81,3 +81,41 @@ class CampaignInviteeListView(generics.ListAPIView):
             )
 
         return queryset
+
+from rest_framework.views import APIView
+from apps.campaigns.services.executor import CampaignExecutor, CampaignExecutionConflictError
+
+class CampaignStartView(APIView):
+    """
+    Initiate campaign execution.
+    Enforces atomic database row-locking to prevent concurrent double-starts.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk: int):
+        seed = request.data.get('seed')
+        if seed is not None:
+            try:
+                seed = int(seed)
+            except (ValueError, TypeError):
+                seed = None
+
+        executor = CampaignExecutor(seed=seed)
+        try:
+            result = executor.start_campaign(campaign_id=pk)
+            return Response(result, status=status.HTTP_200_OK)
+        except CampaignExecutionConflictError as err:
+            return Response({
+                'error': {
+                    'code': 'CAMPAIGN_CONFLICT',
+                    'message': str(err)
+                }
+            }, status=status.HTTP_409_CONFLICT)
+        except ValueError as err:
+            return Response({
+                'error': {
+                    'code': 'NOT_FOUND',
+                    'message': str(err)
+                }
+            }, status=status.HTTP_404_NOT_FOUND)
+

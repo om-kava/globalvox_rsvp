@@ -8,6 +8,30 @@ All notable changes, phase completions, and design decisions are documented in t
 
 ---
 
+## [Phase 7] — Campaign Execution Engine
+**Timestamp**: 2026-09-14 12:14:00 UTC
+
+### Added
+- Created `CampaignExecutor` service (`apps/campaigns/services/executor.py`):
+  - Database-level row locking with `select_for_update()` inside an atomic transaction to prevent concurrent double-starts.
+  - State machine lifecycle transition: `DRAFT` -> `RUNNING` -> `COMPLETED`.
+  - Dispatches calls to `CallingProvider` and records `CallAttempt` audit rows with provider call ID, status, duration (seconds), carrier error codes, and AI conversation summaries.
+  - Updates `CampaignInvitee` records with latest `rsvp_status`, `call_status`, `attempt_count`, and `last_attempt_at`.
+  - Failure Resilience: Partial carrier drops and network timeouts do not halt campaign execution; errors are logged and remaining invitees continue processing.
+- Created `CampaignStartView` (`POST /api/campaigns/<id>/start/`):
+  - Returns `409 Conflict` if campaign is already running or completed.
+  - Returns `200 OK` with execution summary and updated metrics upon run.
+- Implemented and executed automated test suite `apps/campaigns/tests/test_execution.py` (5/5 tests passed).
+
+### Security
+- Row-level database locking (`select_for_update`) completely mitigates race-condition double-dispatch attacks.
+- Execution bounded by atomic transactions; unhandled provider exceptions isolated to single invitee without crashing the server.
+
+### Tests Performed
+- `python manage.py test apps.campaigns`: 14/14 tests passed (CRUD, metrics, filters, end-to-end execution, double-start 409 defense, carrier timeout resilience).
+
+---
+
 ## [Phase 6] — Calling Provider Subsystem
 **Timestamp**: 2026-09-14 12:12:00 UTC
 
