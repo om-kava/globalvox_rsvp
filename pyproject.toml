@@ -1,0 +1,2 @@
+[tool.vercel]
+entrypoint = "globalvox_project.wsgi:application"
