@@ -77,27 +77,38 @@ WSGI_APPLICATION = 'globalvox_project.wsgi.application'
 # Database Configuration (MySQL with environment-based settings)
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-db_engine = os.getenv('DB_ENGINE', 'django.db.backends.mysql')
-db_name = os.getenv('DB_NAME') or os.getenv('MYSQLDATABASE', 'globalvox_rsvp')
-db_user = os.getenv('DB_USER') or os.getenv('MYSQLUSER', 'root')
-db_password = os.getenv('DB_PASSWORD') or os.getenv('MYSQLPASSWORD', '')
-db_host = os.getenv('DB_HOST') or os.getenv('MYSQLHOST', '127.0.0.1')
-db_port = os.getenv('DB_PORT') or os.getenv('MYSQLPORT', '3306')
+db_engine = os.getenv('DB_ENGINE')
+db_host = os.getenv('DB_HOST') or os.getenv('MYSQLHOST')
 
-DATABASES = {
-    'default': {
-        'ENGINE': db_engine,
-        'NAME': db_name,
-        'USER': db_user,
-        'PASSWORD': db_password,
-        'HOST': db_host,
-        'PORT': db_port,
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        } if 'mysql' in db_engine else {},
+# If deployed on Vercel without an external MySQL host configured, fallback to /tmp/db.sqlite3
+if os.getenv('VERCEL') and not db_host and db_engine != 'django.db.backends.mysql':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': '/tmp/db.sqlite3',
+        }
     }
-}
+else:
+    db_engine = db_engine or 'django.db.backends.mysql'
+    db_name = os.getenv('DB_NAME') or os.getenv('MYSQLDATABASE', 'globalvox_rsvp')
+    db_user = os.getenv('DB_USER') or os.getenv('MYSQLUSER', 'root')
+    db_password = os.getenv('DB_PASSWORD') or os.getenv('MYSQLPASSWORD', '')
+    db_port = os.getenv('DB_PORT') or os.getenv('MYSQLPORT', '3306')
+
+    DATABASES = {
+        'default': {
+            'ENGINE': db_engine,
+            'NAME': db_name,
+            'USER': db_user,
+            'PASSWORD': db_password,
+            'HOST': db_host or '127.0.0.1',
+            'PORT': db_port,
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            } if 'mysql' in db_engine else {},
+        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
