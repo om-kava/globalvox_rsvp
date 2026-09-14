@@ -8,6 +8,30 @@ All notable changes, phase completions, and design decisions are documented in t
 
 ---
 
+## [Phase 6] — Calling Provider Subsystem
+**Timestamp**: 2026-09-14 12:12:00 UTC
+
+### Added
+- Created `apps.calling.base`:
+  - `CallingProvider` abstract base class.
+  - Standardized input dataclass `CallRequest` (`invitee_id`, `name`, `phone`, `campaign_id`, `campaign_name`, `event_name`, `attempt_number`).
+  - Standardized output dataclass `CallResponse` (`provider_call_id`, `status`, `rsvp_outcome`, `duration_seconds`, `error_code`, `error_message`, `transcript_summary`, `is_success`).
+- Created `apps.calling.mock_provider.MockCallingProvider`:
+  - Simulates the realistic outcome distribution from the assessment: Confirmed (~62%), Declined (~8%), Undecided (~5%), Unreachable/Pending (~20%), Technical Failure (~5%).
+  - Simulates variable conversation lengths (35–110 seconds for calls, 3–25 seconds for drops/unreachable).
+  - Rich AI conversation summaries and realistic carrier error codes (`NETWORK_TIMEOUT`, `CALL_DROP`, `CODEC_MISMATCH`).
+  - Deterministic random seeding support for reproducible testing.
+- Implemented and executed automated test suite `apps/calling/tests/test_provider.py` (4/4 tests passed).
+
+### Security
+- Provider decoupled from database operations, preventing side effects during call dispatch.
+- PII-safe design: only necessary parameters passed to provider contract.
+
+### Tests Performed
+- `python manage.py test apps.calling`: 4/4 passed (Interface compliance, deterministic seeding, 200-call distribution variety test, error code verification).
+
+---
+
 ## [Phase 5] — Campaign Management
 **Timestamp**: 2026-09-14 12:10:00 UTC
 
