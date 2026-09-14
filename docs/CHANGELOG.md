@@ -8,6 +8,31 @@ All notable changes, phase completions, and design decisions are documented in t
 
 ---
 
+## [Phase 5] — Campaign Management
+**Timestamp**: 2026-09-14 12:10:00 UTC
+
+### Added
+- Created `apps.campaigns.serializers`:
+  - `CampaignListSerializer`: high-level summary cards with computed `total_invitees`.
+  - `CampaignDetailSerializer`: detailed campaign view with live single-query SQL aggregation `metrics` dictionary.
+  - `CampaignCreateSerializer`: atomic creation with support for explicit `invitee_ids` or `enroll_all_invitees=True`.
+  - `CampaignInviteeSerializer`: serialized invitee participation with masked phone and status tracking.
+- Created `apps.campaigns.views`:
+  - `CampaignListCreateView` (`GET /api/campaigns/`, `POST /api/campaigns/`).
+  - `CampaignDetailView` (`GET /api/campaigns/<id>/`).
+  - `CampaignInviteeListView` (`GET /api/campaigns/<id>/invitees/`) supporting filtering by `?rsvp_status=...`, `?call_status=...`, and `?search=...`.
+- Implemented and executed automated test suite `apps/campaigns/tests/test_campaigns.py` (9/9 tests passed).
+
+### Security
+- Automatic attribution of `created_by` to the authenticated user.
+- String trimming, length validation, and date parsing validation prevent malformed campaign states.
+- Endpoints guarded with `IsAuthenticated`.
+
+### Tests Performed
+- `python manage.py test apps.campaigns`: 9/9 tests passed (Creation, enrollment, listing, metrics aggregation, query filtering, missing fields, 404 handling, unauthenticated rejection).
+
+---
+
 ## [Phase 4] — Invitee Import & CSV Engine
 **Timestamp**: 2026-09-14 11:46:00 UTC
 

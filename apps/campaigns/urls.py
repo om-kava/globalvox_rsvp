@@ -1,7 +1,10 @@
 from django.urls import path
+from .views import CampaignListCreateView, CampaignDetailView, CampaignInviteeListView
 
 app_name = 'campaigns'
 
 urlpatterns = [
-    # Campaign endpoints will be implemented in Phase 5 & 7
+    path('', CampaignListCreateView.as_view(), name='list_create'),
+    path('<int:pk>/', CampaignDetailView.as_view(), name='detail'),
+    path('<int:campaign_id>/invitees/', CampaignInviteeListView.as_view(), name='invitees'),
 ]
