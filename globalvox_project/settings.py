@@ -15,10 +15,10 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-gv-rsvp-dev-key-!9x#p2$q@8
 
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
 
-allowed_hosts_str = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver,.vercel.app,.railway.app,*')
+allowed_hosts_str = os.getenv('ALLOWED_HOSTS') or '*'
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
-if 'testserver' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('testserver')
+if '*' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('*')
 
 # Application definition
 INSTALLED_APPS = [
