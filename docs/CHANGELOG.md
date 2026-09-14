@@ -8,6 +8,31 @@ All notable changes, phase completions, and design decisions are documented in t
 
 ---
 
+## [Phase 2] — Database Foundation
+**Timestamp**: 2026-09-14 11:29:00 UTC
+
+### Added
+- Created `apps.invitees.models.Invitee`: contact directory with phone privacy masking (`phone_masked`), indexed phone/email fields, and external ID.
+- Created `apps.campaigns.models.Campaign`: event metadata (name, event date, location, objective, lifecycle status `DRAFT`/`RUNNING`/`COMPLETED`), single-query SQL aggregation method `calculate_metrics()`.
+- Created `apps.campaigns.models.CampaignInvitee`: join model with controlled status enums (`RSVPStatus`, `CallStatus`), unique constraint on `(campaign, invitee)`, and composite indexes (`idx_camp_rsvp_status`, `idx_camp_call_status`).
+- Created `apps.calling.models.CallAttempt`: audit trail of call attempts with duration, provider call ID, status (`IN_PROGRESS`, `COMPLETED`, `FAILED`), error tracking (`error_code`, `error_message`), and AI transcript summary.
+- Database `globalvox_rsvp` provisioned in MySQL with `utf8mb4` character set.
+- Migrations generated and executed:
+  - `invitees.0001_initial`
+  - `campaigns.0001_initial`
+  - `calling.0001_initial`
+  - Django core auth & sessions migrations applied.
+
+### Security
+- Passwords and database credentials isolated to `.env` (strictly git-ignored).
+- Unique database constraints enforced against duplicate campaign enrollments.
+- Privacy property `phone_masked` implemented on `Invitee` to ensure PII is masked on UI presentations.
+
+### Tests Performed
+- Automated model lifecycle test: record creation, foreign key cascades, SQL aggregation verification, phone masking verification, and cleanup executed successfully against live MySQL database.
+
+---
+
 ## [Phase 1] — Project Foundation
 **Timestamp**: 2026-09-14 11:25:00 UTC
 
