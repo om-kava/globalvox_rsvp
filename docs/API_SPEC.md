@@ -26,31 +26,60 @@
   ```json
   {
     "username": "event_manager",
-    "password": "SecurePassword123"
+    "password": "GlobalVox@2026!"
   }
   ```
 - **Response (200 OK)**:
   ```json
   {
-    "message": "Login successful",
+    "message": "Login successful.",
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "user": {
       "id": 1,
       "username": "event_manager",
-      "email": "events@globalvox.com"
+      "email": "events@globalvox.com",
+      "first_name": "GlobalVox",
+      "last_name": "Event Manager",
+      "is_staff": false,
+      "date_joined": "2026-09-14T10:00:00Z"
     }
   }
   ```
-- **Errors**: `400 Bad Request` (missing fields), `401 Unauthorized` (invalid credentials).
+- **Errors**: `400 Bad Request` (blank fields, boundary exceedance, invalid credentials, inactive account).
 
-### 2.2 Current User
+### 2.2 Token Refresh
+- **Endpoint**: `POST /api/auth/refresh/`
+- **Auth**: None (Valid refresh token required)
+- **Request Body**:
+  ```json
+  {
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+  ```
+- **Response (200 OK)**:
+  ```json
+  {
+    "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+  ```
+- **Errors**: `401 Unauthorized` (invalid/expired/blacklisted refresh token).
+
+### 2.3 Current User Profile
 - **Endpoint**: `GET /api/auth/me/`
-- **Auth**: Required
+- **Auth**: Required (`Authorization: Bearer <access_token>` or Session)
 - **Response (200 OK)**: User profile object.
 
-### 2.3 Logout
+### 2.4 Logout & Token Blacklist
 - **Endpoint**: `POST /api/auth/logout/`
 - **Auth**: Required
-- **Response (200 OK)**: `{"message": "Logged out successfully"}`
+- **Request Body**:
+  ```json
+  {
+    "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+  ```
+- **Response (200 OK)**: `{"message": "Logged out successfully."}`
 
 ---
 

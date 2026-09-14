@@ -8,6 +8,28 @@ All notable changes, phase completions, and design decisions are documented in t
 
 ---
 
+## [Phase 3] — Authentication & Authorization (JWT + Session)
+**Timestamp**: 2026-09-14 11:38:00 UTC
+
+### Added
+- Integrated `djangorestframework-simplejwt` with HMAC-SHA256 token signing and database token blacklisting (`token_blacklist` migrations applied).
+- Implemented `LoginView` (`/api/auth/login/`), `TokenRefreshView` (`/api/auth/refresh/`), `CurrentUserView` (`/api/auth/me/`), and `LogoutView` (`/api/auth/logout/`).
+- Created `apps.accounts.serializers.LoginSerializer` with strict boundary validation (min/max length, whitespace trimming, inactive user isolation).
+- Created `apps.accounts.management.commands.create_default_manager` seeding default business manager (`event_manager`) and superuser (`admin`).
+- Created client-side modular JavaScript helper `static/js/auth.js` featuring pre-flight validation, token storage, and automatic token renewal on 401 responses.
+- Implemented and executed automated test suite `apps/accounts/tests/test_auth.py` covering 16 distinct test cases.
+
+### Security
+- Stateless JWT Bearer token authentication with 60-minute access token lifetime and 7-day refresh token lifetime with automatic rotation and blacklisting.
+- Generic error responses prevent user enumeration.
+- SQL injection payloads (`' OR '1'='1`) and XSS script tags verified safely handled.
+- Boundaries verified: 128-char passwords, 150-char usernames, blank/whitespace checks.
+
+### Tests Performed
+- `python manage.py test apps.accounts`: 16/16 tests passed (Happy path, edge cases, boundary values, SQL injection, XSS attacks).
+
+---
+
 ## [Phase 2] — Database Foundation
 **Timestamp**: 2026-09-14 11:29:00 UTC
 

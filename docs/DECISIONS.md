@@ -61,3 +61,16 @@
 - **Chosen Option**: Database row-level locking (`select_for_update`) in an atomic transaction.
 - **Reason**: Provides bulletproof backend enforcement that works even across multiple worker processes or distributed servers.
 - **Trade-off**: Slight overhead of a database row lock during the initial transition from `DRAFT` to `RUNNING`.
+
+---
+
+## ADR-06: JWT & Dual-Mode Authentication Architecture
+- **Date**: 2026-09-14
+- **Context**: Need secure, stateless, decoupled API authentication while preserving seamless browser navigation and CSRF defenses.
+- **Options Considered**:
+  1. Session-only authentication
+  2. Basic authentication
+  3. JSON Web Tokens (JWT) via `djangorestframework-simplejwt` + Session fallback
+- **Chosen Option**: Dual-Mode JWT + Session Authentication with Token Blacklisting.
+- **Reason**: Standard Bearer token authentication allows external microservices, decoupled SPA frontends, and mobile clients to consume the API securely without cookie dependencies, while session fallback allows the local Django browser interface to operate smoothly. Token blacklisting guarantees that logged-out refresh tokens cannot be reused.
+- **Trade-off**: Requires maintaining token blacklist database table and refreshing expired access tokens.
