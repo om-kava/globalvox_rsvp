@@ -479,11 +479,26 @@
 
                 const headerPills = document.createElement('div');
                 headerPills.style.margin = '0.35rem 0';
-                headerPills.innerHTML = `
-                    <span class="badge badge-${att.status.toLowerCase()}">${att.status}</span>
-                    <span class="badge badge-${(att.rsvp_outcome || 'pending').toLowerCase()}">Outcome: ${att.rsvp_outcome}</span>
-                    <span style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted); margin-left: 0.5rem;">ID: ${att.provider_call_id}</span>
-                `;
+                
+                const sBadge = document.createElement('span');
+                sBadge.className = `badge badge-${att.status.toLowerCase()}`;
+                sBadge.textContent = att.status;
+                
+                const oBadge = document.createElement('span');
+                oBadge.className = `badge badge-${(att.rsvp_outcome || 'pending').toLowerCase()}`;
+                oBadge.textContent = `Outcome: ${att.rsvp_outcome}`;
+                oBadge.style.marginLeft = '0.35rem';
+                
+                const idSpan = document.createElement('span');
+                idSpan.style.fontFamily = 'monospace';
+                idSpan.style.fontSize = '0.75rem';
+                idSpan.style.color = 'var(--text-muted)';
+                idSpan.style.marginLeft = '0.5rem';
+                idSpan.textContent = `ID: ${att.provider_call_id}`;
+
+                headerPills.appendChild(sBadge);
+                headerPills.appendChild(oBadge);
+                headerPills.appendChild(idSpan);
 
                 const desc = document.createElement('div');
                 desc.className = 'timeline-desc';
@@ -633,7 +648,15 @@
         elements.previewTbody.innerHTML = '';
         (data.sample_valid || []).forEach(row => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${row.name}</td><td>${row.phone}</td><td>${row.email}</td>`;
+            const tdName = document.createElement('td');
+            tdName.textContent = row.name;
+            const tdPhone = document.createElement('td');
+            tdPhone.textContent = row.phone;
+            const tdEmail = document.createElement('td');
+            tdEmail.textContent = row.email;
+            tr.appendChild(tdName);
+            tr.appendChild(tdPhone);
+            tr.appendChild(tdEmail);
             elements.previewTbody.appendChild(tr);
         });
 
