@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlobalVox RSVP — Voice AI Campaign Management</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Top Header -->
+    <header class="app-header">
+        <div class="logo-group">
+            <div class="logo-badge">GV</div>
+            <div>
+                <div class="logo-title">GlobalVox RSVP</div>
+                <div class="logo-subtitle">AI Voice Campaign Manager</div>
+            </div>
+        </div>
+        <div class="user-nav" id="user-nav" style="display: none;">
+            <div class="user-badge">
+                <div class="user-dot"></div>
+                <span id="nav-username">event_manager</span>
+            </div>
+            <button id="btn-logout" class="btn btn-secondary">Logout</button>
+        </div>
+    </header>
+
+    <!-- 1. LOGIN SCREEN -->
+    <main id="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-badge" style="display: inline-block; margin-bottom: 0.75rem;">GV RSVP</div>
+                <h2>Event Team Sign In</h2>
+                <p>Enter your credentials to manage RSVP calling campaigns</p>
+            </div>
+
+            <form id="form-login">
+                <div class="form-group">
+                    <label class="form-label" for="login-username">Username</label>
+                    <input type="text" id="login-username" class="form-input" placeholder="e.g. event_manager" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="••••••••••••" required>
+                </div>
+                <button type="submit" id="btn-submit-login" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                    Sign In to Dashboard
+                </button>
+            </form>
+
+            <div class="demo-helper">
+                <span>Evaluation Quick Fill: </span>
+                <button type="button" id="btn-quick-fill">Use Seeded Manager</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 2. MAIN DASHBOARD -->
+    <main id="dashboard-container" class="main-content" style="display: none;">
+        <!-- Top Campaign Selector & Banner -->
+        <section class="campaign-bar">
+            <div class="campaign-info">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <select id="campaign-selector" class="form-select" style="max-width: 320px; font-weight: 700;"></select>
+                    <span id="campaign-status-badge" class="badge badge-draft">DRAFT</span>
+                </div>
+                <div class="campaign-meta">
+                    <span>📅 <strong id="meta-event-date">Loading...</strong></span>
+                    <span>📍 <strong id="meta-event-location">Loading...</strong></span>
+                    <span>🎯 <span id="meta-event-name">Loading...</span></span>
+                </div>
+            </div>
+            <div class="campaign-actions">
+                <button id="btn-start-campaign" class="btn btn-primary">
+                    <span id="start-btn-icon">📞</span>
+                    <span id="start-btn-text">Start Campaign</span>
+                </button>
+                <button id="btn-open-import" class="btn btn-secondary">📥 Import CSV</button>
+                <button id="btn-open-new-campaign" class="btn btn-secondary">➕ New Campaign</button>
+            </div>
+        </section>
+
+        <!-- Executive Metrics Grid -->
+        <section class="metrics-grid">
+            <div class="metric-card card-total">
+                <div class="metric-label">Total Invitees</div>
+                <div class="metric-value" id="metric-total">0</div>
+                <div class="metric-sub">Enrolled contacts</div>
+            </div>
+            <div class="metric-card card-confirmed">
+                <div class="metric-label">Confirmed</div>
+                <div class="metric-value" id="metric-confirmed" style="color: var(--status-confirmed);">0</div>
+                <div class="metric-sub">Will attend event</div>
+            </div>
+            <div class="metric-card card-declined">
+                <div class="metric-label">Declined</div>
+                <div class="metric-value" id="metric-declined" style="color: var(--status-declined);">0</div>
+                <div class="metric-sub">Cannot attend</div>
+            </div>
+            <div class="metric-card card-undecided">
+                <div class="metric-label">Undecided</div>
+                <div class="metric-value" id="metric-undecided" style="color: var(--status-undecided);">0</div>
+                <div class="metric-sub">Deciding later</div>
+            </div>
+            <div class="metric-card card-pending">
+                <div class="metric-label">Pending</div>
+                <div class="metric-value" id="metric-pending" style="color: var(--status-pending);">0</div>
+                <div class="metric-sub">Not yet contacted</div>
+            </div>
+            <div class="metric-card card-failed">
+                <div class="metric-label">Failed / Issues</div>
+                <div class="metric-value" id="metric-failed" style="color: var(--status-failed);">0</div>
+                <div class="metric-sub">Carrier or dial errors</div>
+            </div>
+        </section>
+
+        <!-- Invitee Table & Filtering Toolbar -->
+        <section class="table-container">
+            <div class="table-toolbar">
+                <div class="filter-tabs">
+                    <button class="tab-btn active" data-filter="ALL">All Invitees</button>
+                    <button class="tab-btn" data-filter="CONFIRMED">Confirmed</button>
+                    <button class="tab-btn" data-filter="DECLINED">Declined</button>
+                    <button class="tab-btn" data-filter="UNDECIDED">Undecided</button>
+                    <button class="tab-btn" data-filter="PENDING">Pending</button>
+                    <button class="tab-btn" data-filter="FAILED">Failed</button>
+                </div>
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="table-search" placeholder="Search name, phone, email...">
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Invitee Name</th>
+                            <th>Phone (Privacy Masked)</th>
+                            <th>Email</th>
+                            <th>RSVP Status</th>
+                            <th>Call Status</th>
+                            <th>Attempts</th>
+                            <th>AI Conversation Summary</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invitee-tbody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                No invitees found in this campaign. Use "Import CSV" to add invitees.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL 1: NEW CAMPAIGN -->
+    <div id="modal-new-campaign" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>Create New RSVP Campaign</h3>
+                <button class="modal-close" data-close="modal-new-campaign">&times;</button>
+            </div>
+            <form id="form-new-campaign">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="camp-name">Campaign Name</label>
+                        <input type="text" id="camp-name" class="form-input" placeholder="e.g. Annual Business Meet — RSVP" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="camp-event-name">Event Name</label>
+                        <input type="text" id="camp-event-name" class="form-input" placeholder="e.g. GlobalVox Annual Business Meet" required>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="camp-event-date">Event Date</label>
+                            <input type="date" id="camp-event-date" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="camp-event-location">Event Location</label>
+                            <input type="text" id="camp-event-location" class="form-input" placeholder="e.g. Ahmedabad" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="camp-objective">AI Calling Objective</label>
+                        <textarea id="camp-objective" class="form-textarea" rows="2">AI agent should contact each invitee and determine whether they will attend the event.</textarea>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="camp-enroll-all" checked>
+                        <label for="camp-enroll-all" style="font-size: 0.85rem; color: var(--text-secondary);">
+                            Automatically enroll all existing invitees into this campaign
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close="modal-new-campaign">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Campaign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: CSV IMPORT -->
+    <div id="modal-import-csv" class="modal-overlay">
+        <div class="modal-dialog" style="max-width: 750px;">
+            <div class="modal-header">
+                <h3>Import Invitee CSV List</h3>
+                <button class="modal-close" data-close="modal-import-csv">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    Upload a CSV file containing columns: <code>id, name, phone, email</code>. Preview mode validates every row without modifying data.
+                </p>
+
+                <div class="form-group">
+                    <input type="file" id="csv-file-input" accept=".csv" class="form-input" style="padding: 0.4rem;">
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; margin-bottom: 1.25rem;">
+                    <button id="btn-preview-csv" class="btn btn-secondary">🔍 Validate & Preview</button>
+                    <button id="btn-commit-csv" class="btn btn-success" disabled>💾 Commit to Database</button>
+                </div>
+
+                <!-- Preview Output Area -->
+                <div id="preview-output" style="display: none;">
+                    <div id="preview-summary-pills" style="display: flex; gap: 0.75rem; margin-bottom: 1rem;"></div>
+                    <div id="preview-errors-box" style="margin-bottom: 1rem;"></div>
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                        <table class="data-table" style="font-size: 0.8rem;">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody id="preview-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-close="modal-import-csv">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: INDIVIDUAL INVITEE INSPECTION -->
+    <div id="modal-invitee-detail" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>Invitee Call History & Details</h3>
+                <button class="modal-close" data-close="modal-invitee-detail">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                    <div>
+                        <div class="metric-label">Full Name</div>
+                        <div id="detail-name" style="font-size: 1.1rem; font-weight: 700;">-</div>
+                    </div>
+                    <div>
+                        <div class="metric-label">Phone (Masked)</div>
+                        <div id="detail-phone" class="cell-masked" style="font-size: 1.05rem;">-</div>
+                    </div>
+                    <div>
+                        <div class="metric-label">Email</div>
+                        <div id="detail-email" style="font-size: 0.9rem; color: var(--text-secondary);">-</div>
+                    </div>
+                    <div>
+                        <div class="metric-label">Current Status</div>
+                        <div id="detail-status" style="margin-top: 0.2rem;">-</div>
+                    </div>
+                </div>
+
+                <div class="metric-label" style="margin-top: 1rem;">Call Attempt Audit Timeline</div>
+                <div id="detail-timeline" class="timeline">
+                    <div style="color: var(--text-muted); font-size: 0.85rem;">No call attempts recorded yet.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-close="modal-invitee-detail">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Application Scripts -->
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
