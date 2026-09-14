@@ -87,9 +87,17 @@ is_unreachable_host = (
     or db_host in ('127.0.0.1', 'localhost')
 )
 
-# If deployed on Vercel without an external reachable MySQL host configured, fallback to /tmp/db.sqlite3
-if (os.getenv('VERCEL') and is_unreachable_host) or db_engine == 'django.db.backends.sqlite3':
-    sqlite_db_name = os.getenv('SQLITE_PATH') or ('/tmp/db.sqlite3' if os.getenv('VERCEL') else str(BASE_DIR / 'seed.sqlite3'))
+# Detect serverless / linux cloud deployment (Vercel, AWS Lambda, etc.)
+is_serverless = bool(
+    os.getenv('VERCEL')
+    or os.getenv('VERCEL_ENV')
+    or os.getenv('AWS_LAMBDA_FUNCTION_NAME')
+    or (os.name != 'nt' and os.path.exists('/tmp'))
+)
+
+# If no reachable remote host is configured or SQLite is specified, use SQLite safely
+if is_unreachable_host or db_engine == 'django.db.backends.sqlite3':
+    sqlite_db_name = os.getenv('SQLITE_PATH') or ('/tmp/db.sqlite3' if is_serverless else str(BASE_DIR / 'seed.sqlite3'))
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
