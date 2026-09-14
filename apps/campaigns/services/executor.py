@@ -3,6 +3,7 @@ from django.utils import timezone
 from typing import Optional, Dict, Any
 
 from apps.campaigns.models import Campaign, CampaignInvitee, CampaignStatus, RSVPStatus, CallStatus
+from apps.invitees.models import Invitee
 from apps.calling.models import CallAttempt, CallAttemptStatus
 from apps.calling.base import CallingProvider, CallRequest
 from apps.calling.mock_provider import MockCallingProvider
@@ -33,16 +34,32 @@ class CampaignExecutor:
             except Campaign.DoesNotExist:
                 raise ValueError(f"Campaign with ID {campaign_id} does not exist.")
 
-            if campaign.status != CampaignStatus.DRAFT:
+            if campaign.status == CampaignStatus.RUNNING:
                 raise CampaignExecutionConflictError(
-                    f"Campaign '{campaign.name}' cannot be started because its current status is {campaign.status}."
+                    f"Campaign '{campaign.name}' cannot be started because it is already actively running."
                 )
 
+            # Check if there are pending invitees to call
+            pending_count = campaign.campaign_invitees.filter(
+                call_status=CallStatus.NOT_ATTEMPTED
+            ).count()
+
+            if pending_count == 0:
+                if campaign.campaign_invitees.count() == 0:
+                    raise CampaignExecutionConflictError(
+                        f"Campaign '{campaign.name}' has no invitees enrolled. Please import a CSV for this campaign first."
+                    )
+                else:
+                    raise CampaignExecutionConflictError(
+                        f"All invitees in Campaign '{campaign.name}' have already been called. No pending calls remaining."
+                    )
+
             campaign.status = CampaignStatus.RUNNING
-            campaign.started_at = timezone.now()
+            if not campaign.started_at:
+                campaign.started_at = timezone.now()
             campaign.save(update_fields=['status', 'started_at'])
 
-        # Step 2: Fetch all enrolled invitees pending calls
+        # Step 2: Fetch only pending invitees that have NOT been attempted yet
         participations = campaign.campaign_invitees.select_related('invitee').filter(
             call_status=CallStatus.NOT_ATTEMPTED
         )

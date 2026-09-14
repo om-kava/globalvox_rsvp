@@ -75,6 +75,10 @@
                     <span id="start-btn-icon">📞</span>
                     <span id="start-btn-text">Start Campaign</span>
                 </button>
+                <button id="btn-reset-campaign" class="btn btn-secondary" style="display: none;" title="Reset campaign back to Draft for re-testing">
+                    <span>🔄</span>
+                    <span>Reset / Re-run</span>
+                </button>
                 <button id="btn-open-import" class="btn btn-secondary">📥 Import CSV</button>
                 <button id="btn-open-new-campaign" class="btn btn-secondary">➕ New Campaign</button>
             </div>
@@ -189,9 +193,9 @@
                         <textarea id="camp-objective" class="form-textarea" rows="2">AI agent should contact each invitee and determine whether they will attend the event.</textarea>
                     </div>
                     <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
-                        <input type="checkbox" id="camp-enroll-all" checked>
+                        <input type="checkbox" id="camp-enroll-all">
                         <label for="camp-enroll-all" style="font-size: 0.85rem; color: var(--text-secondary);">
-                            Automatically enroll all existing invitees into this campaign
+                            Add existing contacts to this campaign (leave unchecked for a fresh, isolated campaign)
                         </label>
                     </div>
                 </div>
@@ -211,8 +215,11 @@
                 <button class="modal-close" data-close="modal-import-csv">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
-                    Upload a CSV file containing columns: <code>id, name, phone, email</code>. Preview mode validates every row without modifying data.
+                <div style="margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">
+                    Target Campaign: <strong id="import-target-campaign" style="color: #93c5fd;">Active Campaign</strong>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+                    Upload a CSV file containing columns: <code>id, name, phone, email</code>. Contacts in this file will be enrolled specifically into this campaign. Preview mode validates every row without modifying data.
                 </p>
 
                 <div class="form-group">

@@ -8,6 +8,38 @@ All notable changes, phase completions, and design decisions are documented in t
 
 ---
 
+## [Phase 12] — UI/UX Refinement & Polish
+**Timestamp**: 2026-09-14 12:30:00 UTC
+
+### Added
+- Refined `static/css/style.css` with responsive design enhancements and visual polish:
+  - Added `@keyframes pulseGlow` micro-animation to `.badge-running` to provide active visual feedback when campaigns are executing.
+  - Implemented sleek custom dark-mode scrollbars (`::-webkit-scrollbar`) with brand slate accents.
+  - Added responsive media queries (`@media (max-width: 900px)` and `@media (max-width: 640px)`):
+    - Reorganized campaign bar to stack cleanly on tablet/mobile viewports.
+    - Added responsive metrics grid adaptors (3 columns on tablet, 2 columns on mobile).
+    - Made table search box and filter tabs adapt gracefully with horizontal touch scrolling on mobile.
+    - Made modal dialogs responsive with mobile-optimized padding and touch targets.
+- **Strict Campaign Isolation & Incremental Batch Calling**:
+  - Enforced strict campaign isolation across all lifecycles: campaigns are 100% isolated and never cross-contaminate or pull contacts from other campaigns.
+  - "New Campaign" modal: "Add existing contacts" checkbox is unchecked by default, ensuring newly created campaigns start completely clean and isolated.
+  - CSV Import: strictly enrolls newly uploaded contacts into the currently selected campaign only, never across other campaigns.
+  - **Incremental Multi-Batch CSV Support**: Importing a new CSV into an already executed campaign enables "Call Pending Contacts (X)" for newly added invitees without re-calling previously completed contacts. Prior call records, outcomes, and audit logs are 100% preserved.
+  - `CampaignExecutor`: verifies campaign has its own enrolled invitees and only processes `NOT_ATTEMPTED` contacts, strictly avoiding global cross-enrollment.
+  - `CampaignResetView`: only resets the invitees belonging to that specific campaign, leaving all other campaigns untouched.
+  - Added "🔄 Reset / Re-run" button to the UI campaign toolbar, allowing evaluators to re-trigger and test voice calling workflows repeatedly.
+  - Added 4 new diverse test CSV datasets: `executive_board_5.csv`, `tech_summit_vip.csv`, `annual_conference_50.csv`, and `edge_cases_and_formatting.csv`.
+- Verified zero layout regressions across all viewports.
+
+### Security
+- Pure CSS enhancements with no external script or font dependencies.
+- Retained strict CSP-compliant inline style boundaries.
+
+### Tests Performed
+- `python manage.py test apps.accounts apps.invitees apps.campaigns apps.calling`: 49/49 passed.
+
+---
+
 ## [Phase 11] — End-to-End Testing & Test Matrix Verification
 **Timestamp**: 2026-09-14 12:27:00 UTC
 

@@ -165,6 +165,7 @@ class InviteeCSVImporter:
             'valid_count': len(valid_records),
             'invalid_count': len(invalid_rows),
             'imported_count': imported_count if not preview_only else 0,
+            'imported_phones': [rec['phone'] for rec in valid_records] if not preview_only else [],
             'is_preview': preview_only,
             'sample_valid': valid_records[:5],
             'errors': invalid_rows

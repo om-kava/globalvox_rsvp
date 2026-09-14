@@ -146,3 +146,103 @@ class CampaignInviteeDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class CampaignResetView(APIView):
+    """
+    Resets a completed or running campaign back to DRAFT state for testing/evaluation.
+    Resets all CampaignInvitee records to NOT_ATTEMPTED / PENDING, resets attempts,
+    and removes past CallAttempt logs for this campaign.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk: int):
+        try:
+            campaign = Campaign.objects.get(id=pk)
+        except Campaign.DoesNotExist:
+            return Response({
+                'error': {
+                    'code': 'NOT_FOUND',
+                    'message': f"Campaign with ID {pk} does not exist."
+                }
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.campaigns.models import CampaignStatus, RSVPStatus, CallStatus
+        from apps.calling.models import CallAttempt
+        from apps.invitees.models import Invitee
+
+        # Reset campaign state
+        campaign.status = CampaignStatus.DRAFT
+        campaign.started_at = None
+        campaign.completed_at = None
+        campaign.save(update_fields=['status', 'started_at', 'completed_at'])
+
+        # Delete call attempts for this campaign
+        CallAttempt.objects.filter(campaign_invitee__campaign=campaign).delete()
+
+        # Reset all enrolled invitees
+        campaign.campaign_invitees.update(
+            rsvp_status=RSVPStatus.PENDING,
+            call_status=CallStatus.NOT_ATTEMPTED,
+            attempt_count=0,
+            last_attempt_at=None,
+            notes=""
+        )
+
+        return Response({
+            'message': f"Campaign '{campaign.name}' reset to DRAFT successfully.",
+            'campaign_id': campaign.id,
+            'status': campaign.status,
+            'metrics': campaign.calculate_metrics()
+        }, status=status.HTTP_200_OK)
+
+
+class CampaignEnrollView(APIView):
+    """
+    Enrolls invitees into a campaign.
+    Accepts: { "enroll_all": true } or { "invitee_ids": [1, 2, ...] }
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk: int):
+        try:
+            campaign = Campaign.objects.get(id=pk)
+        except Campaign.DoesNotExist:
+            return Response({
+                'error': {
+                    'code': 'NOT_FOUND',
+                    'message': f"Campaign with ID {pk} does not exist."
+                }
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.campaigns.models import RSVPStatus, CallStatus
+        from apps.invitees.models import Invitee
+
+        enroll_all = request.data.get('enroll_all', True)
+        invitee_ids = request.data.get('invitee_ids', [])
+
+        existing_ids = set(campaign.campaign_invitees.values_list('invitee_id', flat=True))
+        if enroll_all:
+            target_invitees = Invitee.objects.exclude(id__in=existing_ids)
+        else:
+            target_invitees = Invitee.objects.filter(id__in=invitee_ids).exclude(id__in=existing_ids)
+
+        to_create = [
+            CampaignInvitee(
+                campaign=campaign,
+                invitee=inv,
+                rsvp_status=RSVPStatus.PENDING,
+                call_status=CallStatus.NOT_ATTEMPTED
+            )
+            for inv in target_invitees
+        ]
+        created_count = 0
+        if to_create:
+            created_count = len(CampaignInvitee.objects.bulk_create(to_create, ignore_conflicts=True))
+
+        return Response({
+            'message': f"Enrolled {created_count} invitees into campaign.",
+            'enrolled_count': created_count,
+            'total_invitees': campaign.campaign_invitees.count()
+        }, status=status.HTTP_200_OK)
+
+
+

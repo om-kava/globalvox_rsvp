@@ -34,6 +34,35 @@ class InviteeImportView(APIView):
         importer = InviteeCSVImporter()
         try:
             result = importer.process_file(uploaded_file, preview_only=preview_only)
+
+            if not preview_only:
+                campaign_id = request.data.get('campaign_id') or request.query_params.get('campaign_id')
+                if campaign_id:
+                    try:
+                        from apps.campaigns.models import Campaign, CampaignInvitee, CampaignStatus, RSVPStatus, CallStatus
+                        camp = Campaign.objects.get(id=int(campaign_id))
+                        imported_phones = result.get('imported_phones', [])
+                        if imported_phones:
+                            newly_imported = Invitee.objects.filter(phone__in=imported_phones)
+                            existing_ids = set(camp.campaign_invitees.values_list('invitee_id', flat=True))
+                            to_enroll = [
+                                CampaignInvitee(
+                                    campaign=camp,
+                                    invitee=inv,
+                                    rsvp_status=RSVPStatus.PENDING,
+                                    call_status=CallStatus.NOT_ATTEMPTED
+                                )
+                                for inv in newly_imported
+                                if inv.id not in existing_ids
+                            ]
+                            if to_enroll:
+                                CampaignInvitee.objects.bulk_create(to_enroll, ignore_conflicts=True)
+                                if camp.status == CampaignStatus.COMPLETED:
+                                    camp.status = CampaignStatus.DRAFT
+                                    camp.save(update_fields=['status'])
+                    except (Campaign.DoesNotExist, ValueError, TypeError):
+                        pass
+
             return Response(result, status=status.HTTP_200_OK)
         except ValueError as err:
             return Response({

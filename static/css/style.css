@@ -340,7 +340,12 @@ body {
 }
 
 .badge-draft { background-color: var(--status-draft-bg); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3); }
-.badge-running { background-color: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+.badge-running { 
+    background-color: rgba(59, 130, 246, 0.2); 
+    color: #93c5fd; 
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    animation: pulseGlow 1.8s infinite ease-in-out;
+}
 .badge-completed { background-color: var(--status-confirmed-bg); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
 .badge-confirmed { background-color: var(--status-confirmed-bg); color: #34d399; }
 .badge-declined { background-color: var(--status-declined-bg); color: #f87171; }
@@ -677,3 +682,106 @@ body {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
 }
+
+@keyframes pulseGlow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+        opacity: 1;
+    }
+    50% {
+        box-shadow: 0 0 8px 3px rgba(59, 130, 246, 0.35);
+        opacity: 0.85;
+    }
+}
+
+/* ==========================================================================
+   Custom Scrollbar
+   ========================================================================== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--border-light);
+}
+
+/* ==========================================================================
+   Responsive Breakpoints & Layout Adaptations
+   ========================================================================== */
+@media (max-width: 900px) {
+    .main-content {
+        padding: 1.25rem;
+    }
+    .campaign-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .campaign-actions {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    .campaign-actions .btn {
+        flex: 1 1 auto;
+    }
+    .metrics-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .app-header {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    .user-nav {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .main-content {
+        padding: 0.75rem;
+    }
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.6rem;
+    }
+    .metric-card {
+        padding: 0.85rem;
+    }
+    .metric-value {
+        font-size: 1.6rem;
+    }
+    .table-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0.75rem 1rem;
+    }
+    .filter-tabs {
+        overflow-x: auto;
+        padding-bottom: 0.25rem;
+        -webkit-overflow-scrolling: touch;
+    }
+    .search-box {
+        width: 100%;
+    }
+    .modal-dialog {
+        margin: 0.5rem;
+        max-height: 95vh;
+    }
+    .modal-body {
+        padding: 1rem;
+    }
+    .modal-footer {
+        padding: 0.75rem 1rem;
+    }
+}
+

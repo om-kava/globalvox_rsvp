@@ -33,6 +33,7 @@
         metaEventDate: document.getElementById('meta-event-date'),
         metaEventLocation: document.getElementById('meta-event-location'),
         btnStartCampaign: document.getElementById('btn-start-campaign'),
+        btnResetCampaign: document.getElementById('btn-reset-campaign'),
         startBtnText: document.getElementById('start-btn-text'),
         startBtnIcon: document.getElementById('start-btn-icon'),
         btnOpenNewCampaign: document.getElementById('btn-open-new-campaign'),
@@ -52,6 +53,7 @@
         modalNewCampaign: document.getElementById('modal-new-campaign'),
         formNewCampaign: document.getElementById('form-new-campaign'),
         modalImportCsv: document.getElementById('modal-import-csv'),
+        importTargetCampaign: document.getElementById('import-target-campaign'),
         csvFileInput: document.getElementById('csv-file-input'),
         btnPreviewCsv: document.getElementById('btn-preview-csv'),
         btnCommitCsv: document.getElementById('btn-commit-csv'),
@@ -246,23 +248,73 @@
             elements.metricPending.textContent = (m.pending || 0).toLocaleString();
             elements.metricFailed.textContent = (m.failed || 0).toLocaleString();
 
-            // Start button state
-            if (status === 'COMPLETED') {
-                elements.btnStartCampaign.disabled = true;
-                elements.startBtnText.textContent = 'Campaign Completed';
-                elements.startBtnIcon.textContent = '✅';
-            } else if (status === 'RUNNING') {
+            // Start button & Reset button state
+            const pendingCalls = m.pending || 0;
+            const totalCalls = m.total_invitees || 0;
+
+            if (status === 'RUNNING') {
                 elements.btnStartCampaign.disabled = true;
                 elements.startBtnText.textContent = 'Running Calls...';
                 elements.startBtnIcon.textContent = '⏳';
-            } else {
+                if (elements.btnResetCampaign) elements.btnResetCampaign.style.display = 'none';
+            } else if (pendingCalls > 0) {
+                // There are uncalled contacts (either fresh campaign or newly imported CSV batch)
                 elements.btnStartCampaign.disabled = false;
-                elements.startBtnText.textContent = 'Start Campaign';
+                elements.startBtnText.textContent = `Call Pending Contacts (${pendingCalls})`;
                 elements.startBtnIcon.textContent = '📞';
+                if (elements.btnResetCampaign) {
+                    elements.btnResetCampaign.style.display = (status === 'COMPLETED' || (totalCalls - pendingCalls) > 0) ? 'inline-flex' : 'none';
+                }
+            } else if (totalCalls > 0 && pendingCalls === 0) {
+                // All contacts have been called
+                elements.btnStartCampaign.disabled = true;
+                elements.startBtnText.textContent = 'All Contacts Called';
+                elements.startBtnIcon.textContent = '✅';
+                if (elements.btnResetCampaign) elements.btnResetCampaign.style.display = 'inline-flex';
+            } else {
+                // Empty campaign (0 contacts enrolled)
+                elements.btnStartCampaign.disabled = true;
+                elements.startBtnText.textContent = 'Import Contacts to Start';
+                elements.startBtnIcon.textContent = '📥';
+                if (elements.btnResetCampaign) elements.btnResetCampaign.style.display = 'none';
             }
         } catch (err) {
             console.error('Error refreshing campaign:', err);
         }
+    }
+
+    // Reset Campaign Handler
+    if (elements.btnResetCampaign) {
+        elements.btnResetCampaign.addEventListener('click', async () => {
+            if (!state.currentCampaignId) return;
+            if (!confirm('Reset this campaign back to DRAFT? This clears prior attempts and allows re-testing calls.')) return;
+
+            try {
+                elements.btnResetCampaign.disabled = true;
+                elements.btnResetCampaign.textContent = 'Resetting...';
+
+                const res = await Auth.authFetch(`/api/campaigns/${state.currentCampaignId}/reset/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    const msg = data.error ? data.error.message : 'Failed to reset campaign';
+                    throw new Error(msg);
+                }
+
+                showToast('Campaign reset to DRAFT. Ready to test calling again!');
+                await refreshCampaignDetails();
+                await loadInvitees();
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                elements.btnResetCampaign.disabled = false;
+                elements.btnResetCampaign.innerHTML = '<span>🔄</span><span>Reset / Re-run</span>';
+            }
+        });
     }
 
     // ==========================================
@@ -291,7 +343,7 @@
                 throw new Error(msg);
             }
 
-            showToast(`Campaign completed! ${data.calls_dispatched} calls processed (${data.successful_calls} connected).`);
+            showToast(`Batch completed! ${data.calls_dispatched} calls processed (${data.successful_calls} connected). Prior contacts remain unchanged.`);
             await refreshCampaignDetails();
             await loadInvitees();
         } catch (err) {
@@ -570,6 +622,12 @@
         elements.previewOutput.style.display = 'none';
         elements.btnCommitCsv.disabled = true;
         stagedCsvFile = null;
+
+        const activeCamp = state.campaigns.find(c => c.id === state.currentCampaignId);
+        if (elements.importTargetCampaign) {
+            elements.importTargetCampaign.textContent = activeCamp ? `${activeCamp.name} (${activeCamp.event_name})` : 'Active Campaign';
+        }
+
         openModal(elements.modalImportCsv);
     });
 
@@ -670,6 +728,9 @@
         const formData = new FormData();
         formData.append('file', stagedCsvFile);
         formData.append('preview_only', 'false');
+        if (state.currentCampaignId) {
+            formData.append('campaign_id', state.currentCampaignId);
+        }
 
         try {
             elements.btnCommitCsv.disabled = true;
@@ -688,9 +749,8 @@
             showToast(`Successfully imported ${data.imported_count} invitees!`);
             closeModal(elements.modalImportCsv);
 
-            // Re-enroll in current campaign if user desires
+            // Re-enroll and refresh metrics and table
             if (state.currentCampaignId) {
-                // Refresh metrics and table
                 await refreshCampaignDetails();
                 await loadInvitees();
             }
