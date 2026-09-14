@@ -205,5 +205,6 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # Calling Simulation Settings
-MOCK_CALL_DELAY_MS = int(os.getenv('MOCK_CALL_DELAY_MS', '20'))
-SIMULATION_MODE = os.getenv('SIMULATION_MODE', 'realistic')
+mock_delay_raw = (os.getenv('MOCK_CALL_DELAY_MS') or '').strip()
+MOCK_CALL_DELAY_MS = int(mock_delay_raw) if mock_delay_raw.isdigit() else 20
+SIMULATION_MODE = (os.getenv('SIMULATION_MODE') or 'realistic').strip()
