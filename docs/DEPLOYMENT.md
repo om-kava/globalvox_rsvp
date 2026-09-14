@@ -49,9 +49,8 @@ The assessment requires that the application is deployed and accessible via a li
   "version": 2,
   "builds": [
     {
-      "src": "backend/wsgi.py",
-      "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.11" }
+      "src": "api/index.py",
+      "use": "@vercel/python"
     },
     {
       "src": "static/**",
@@ -65,14 +64,30 @@ The assessment requires that the application is deployed and accessible via a li
     },
     {
       "src": "/(.*)",
-      "dest": "backend/wsgi.py"
+      "dest": "api/index.py"
     }
-  ]
+  ],
+  "env": {
+    "DJANGO_SETTINGS_MODULE": "globalvox_project.settings"
+  }
 }
 ```
 
-### 3.2 Production WSGI Entrypoint (`api/index.py` or `backend/wsgi.py`)
-Standard Django WSGI application callable exported for Vercel's Python runtime.
+### 3.2 Production WSGI Entrypoint (`api/index.py`)
+Standard Django WSGI application callable exported for Vercel's Python runtime:
+```python
+import os
+import sys
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'globalvox_project.settings')
+
+from globalvox_project.wsgi import app
+```
 
 ---
 

@@ -8,6 +8,25 @@ All notable changes, phase completions, and design decisions are documented in t
 
 ---
 
+## [Phase 13] — Deployment Preparation (Vercel & Cloud Hosted MySQL)
+**Timestamp**: 2026-09-14 12:59:00 UTC
+
+### Added
+- Created `vercel.json` configuring builds, `@vercel/python` WSGI runtime, and static file CDN caching routes.
+- Created `api/index.py` serverless WSGI entrypoint bridging Vercel requests to Django WSGI application.
+- Verified `WhiteNoiseMiddleware` static file collection with 166 static files compiled (`python manage.py collectstatic --noinput`).
+- Updated [docs/DEPLOYMENT.md](file:///c:/Users/Victus/Desktop/Globalvox/docs/DEPLOYMENT.md) with production environment variables checklist, hosted MySQL connectivity (TiDB / Aiven / Railway), and step-by-step deployment instructions.
+
+### Security
+- Maintained strict environment secret isolation: production credentials, secrets, and database strings are supplied exclusively through platform environment variables.
+- Verified `.env` and `staticfiles/` remain excluded in `.gitignore`.
+
+### Tests Performed
+- Static assets compilation verified: `python manage.py collectstatic --noinput`.
+- Automated test suite verified: 49/49 tests passed.
+
+---
+
 ## [Phase 12] — UI/UX Refinement & Polish
 **Timestamp**: 2026-09-14 12:30:00 UTC
 
